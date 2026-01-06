@@ -59,7 +59,7 @@ LLMを導入しない場合でも、以下の機能は単体で動作します�
 ### Step 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/Sianothess/TTS-DiscordBot.git
+git clone https://github.com/Shise-mix/TTS-Discord-Bot.git
 cd TTS-DiscordBot
 ```
 
