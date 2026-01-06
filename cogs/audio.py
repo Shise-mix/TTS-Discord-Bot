@@ -242,17 +242,43 @@ class AudioSystem(commands.Cog):
 
     @app_commands.command(name="join", description="ボイスチャンネルに接続します")
     async def join(self, interaction: discord.Interaction):
-        if interaction.user.voice:
-            vc = await interaction.user.voice.channel.connect()
+        # ユーザーがVCにいない場合
+        if not interaction.user.voice:
+            await interaction.response.send_message(
+                "User is not in a voice channel.", ephemeral=True
+            )
+            return
+
+        target_channel = interaction.user.voice.channel
+        guild_vc = interaction.guild.voice_client
+
+        # すでにBotがVCに接続している場合
+        if guild_vc and guild_vc.is_connected():
+            if guild_vc.channel == target_channel:
+                # 同じチャンネルにいるなら何もしない
+                await interaction.response.send_message(
+                    "Already connected to this channel.", ephemeral=True
+                )
+            else:
+                # 違うチャンネルなら移動する
+                await guild_vc.move_to(target_channel)
+                await interaction.response.send_message("Moved to your channel.")
+                
+                # 移動時の挨拶
+                text, emo = self._get_response("move_voice")
+                if not text:
+                    text, emo = "移動しました。", "NORMAL"
+                self.enqueue_speech(guild_vc, text, emo)
+        else:
+            # 新規接続
+            vc = await target_channel.connect()
             await interaction.response.send_message("Connected.")
+            
+            # 接続時の挨拶
             text, emo = self._get_response("join_greet_first")
             if not text:
                 text, emo = "接続しました。", "JOY"
             self.enqueue_speech(vc, text, emo)
-        else:
-            await interaction.response.send_message(
-                "User is not in a voice channel.", ephemeral=True
-            )
 
     @app_commands.command(
         name="speak", description="【デバッグ用】指定テキストを読み上げます"

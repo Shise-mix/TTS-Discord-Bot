@@ -1,0 +1,117 @@
+{
+    "alarm_set_text": [
+        "⏰ 承知しました: **{time}** {icon} 「{message}」\n(時間通りにお知らせします。)",
+        "⏰ セットしました: **{time}** {icon} 「{message}」\n(任せてください。)",
+        "⏰ **{time}** {icon} 「{message}」\n(予定に追加しました。)"
+    ],
+    "alarm_set_voice": [
+        "{time}にアラームをセットしました。任せてください。[NORMAL]",
+        "{time}ですね。承知しました。[JOY]",
+        "はい、{time}にお知らせします。[NORMAL]"
+    ],
+    "alarm_list_empty_text": "現在、セットされているアラームはありません。",
+    "alarm_list_empty_voice": "現在、セットされているアラームはありません。[NORMAL]",
+    "alarm_list_voice": "現在設定されているアラームの一覧を表示します。[NORMAL]",
+    "alarm_delete_text": "🗑️ 解除しました: **{time}** {message}",
+    "alarm_delete_voice": [
+        "アラームの設定を解除しました。[NORMAL]",
+        "ご指定のアラームを削除しました。[NORMAL]"
+    ],
+    "alarm_notify_text": [
+        "⏰ **お時間です！** <@{user_id}>\n{message}",
+        "⏰ **予定の時間になりました。** <@{user_id}>\n{message}"
+    ],
+    "alarm_notify_voice": [
+        "時間になりました。{message}[NORMAL]",
+        "マスター、お時間ですよ。{message}[JOY]",
+        "時間です！起きてください！{message}[ANGRY]",
+        "予定の時間になりました。{message}[NORMAL]"
+    ],
+    "dict_add_text": "📖 辞書に登録しました: **{word}** → **{reading}**",
+    "dict_add_voice": [
+        "{word}を、{reading}と覚えました。[JOY]",
+        "{word}の読み方を登録しました。[NORMAL]"
+    ],
+    "dict_delete_text": "🗑️ 辞書から削除しました: **{word}**",
+    "dict_delete_voice": "{word}の登録を削除しました。[NORMAL]",
+    "dict_empty_text": "辞書には何も登録されていません。",
+    "dict_empty_voice": "辞書にはまだ何も登録されていませんね。[NORMAL]",
+    "dict_list_voice": "登録されている単語の一覧です。[NORMAL]",
+    "timer_set_text": "⏳ **{minutes}分** 後にお知らせしますね。",
+    "timer_set_voice": [
+        "{minutes}分ですね。計測を開始します。[NORMAL]",
+        "はい、{minutes}分のタイマーをセットしました。[JOY]",
+        "{minutes}分後にまたお声がけしますね。[NORMAL]"
+    ],
+    "timer_list_empty_text": "現在稼働中のタイマーはありません。",
+    "timer_list_empty_voice": "現在動いているタイマーはありません。[NORMAL]",
+    "timer_list_voice": "現在稼働中のタイマーはこちらです。[NORMAL]",
+    "timer_delete_text": "🗑️ タイマーを停止しました (設定: {minutes}分)",
+    "timer_delete_voice": "タイマーをキャンセルしました。[NORMAL]",
+    "timer_notify_text": [
+        "⏳ **{minutes}分が経過しました。** <@{user_id}>",
+        "⏳ **タイマー終了のお時間です。** <@{user_id}>"
+    ],
+    "timer_notify_voice": [
+        "{minutes}分が経過しました。[NORMAL]",
+        "時間になりましたよ、マスター。[JOY]",
+        "お時間です。作業の区切りをつけてくださいね。[NORMAL]"
+    ],
+    "dice_result_voice": [
+        "ダイスの結果は、{total}でした。[NORMAL]",
+        "それっ！……結果は{total}です。[JOY]",
+        "んー……{total}が出ました。[NORMAL]"
+    ],
+    "dice_critical_text": "\n👑 **素晴らしい！クリティカルです！**",
+    "dice_critical_voice": [
+        "素晴らしい！{total}、クリティカルです！[JOY]",
+        "やりましたね！クリティカルです！[JOY]"
+    ],
+    "dice_fumble_text": "\n💀 **残念ですが……ファンブルです。**",
+    "dice_fumble_voice": [
+        "ああっ……ファンブルです……[SAD]",
+        "これは……手痛い失敗ですね……ファンブルです。[SAD]"
+    ],
+    "join_greet_first": [
+        "お久しぶりです、マスター。待っていましたよ。[JOY]",
+        "起動しました。今日もよろしくお願いしますね。[NORMAL]",
+        "お呼びでしょうか。結月ゆかり、参ります。[JOY]"
+    ],
+    "join_greet_normal": [
+        "こんにちは。ご用命はなんでしょうか？[NORMAL]",
+        "はい、結月ゆかりです。準備万端ですよ。[JOY]",
+        "お疲れ様です。サポートしますね。[JOY]",
+        "はい、聞こえています。[NORMAL]"
+    ],
+    "mute_start": [
+        "マイクをミュートしました。[NORMAL]",
+        "静かにしていますね。[NORMAL]"
+    ],
+    "mute_end": [
+        "ミュートを解除しました。[JOY]",
+        "はい、またお話しできますね。[JOY]"
+    ],
+    "deaf_start": "スピーカーをオフにしました。[NORMAL]",
+    "deaf_end": "おかえりなさい、マスター。[JOY]",
+    "stream_start": "配信を開始しましたね。頑張ってください！[JOY]",
+    "stream_end": "配信、お疲れ様でした。[NORMAL]",
+    "video_start": "カメラをオンにしました。[JOY]",
+    "video_end": "カメラをオフにしました。[NORMAL]",
+    "move_voice": [
+        "こちらに移動しました。[NORMAL]",
+        "場所を変えました。聞こえますか？[NORMAL]"
+    ],
+    "char_change_voice": [
+        "お着替えしました。いかがでしょうか？[JOY]",
+        "はい、交代しましたよ。[JOY]"
+    ],
+    "disconnect_msg": [
+        "失礼します。ゆっくり休んでくださいね。[NORMAL]",
+        "また呼んでください。いつでも待っています。[JOY]",
+        "お疲れ様でした。[NORMAL]"
+    ],
+    "chat_error_reply": [
+        "申し訳ありません、うまく思考がまとまりませんでした。[SAD]",
+        "少し調子が悪いようです……もう一度お願いできますか？[SAD]"
+    ]
+}

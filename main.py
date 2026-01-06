@@ -7,6 +7,7 @@ import random
 import pathlib
 import time
 import subprocess
+import json
 from dotenv import load_dotenv
 
 # 設定ファイルの読み込み
@@ -32,7 +33,6 @@ def input_index(prompt, options, zero_label=None):
     """
     print(f"\n{prompt}")
 
-    # 開始番号の決定（0番の選択肢があるかどうか）
     start_num = 0 if zero_label else 1
 
     if zero_label:
@@ -42,7 +42,6 @@ def input_index(prompt, options, zero_label=None):
         print(f"  [{i + 1}] {opt}")
 
     while True:
-        # ★修正点: 開始番号に応じて表示を変える (0-N または 1-N)
         val = input(f"番号を入力してください ({start_num}-{len(options)}) > ")
         if not val.isdigit():
             continue
@@ -81,7 +80,6 @@ def select_character_interactive(presets):
         print(f"  [{i + 1}] {name}{suffix}")
 
     while True:
-        # ★修正点: ここも 1-N に統一
         val = input(f"キャラクター番号を入力 (1-{len(group_names)}) > ").strip()
         if not val.isdigit():
             continue
@@ -105,7 +103,6 @@ def select_character_interactive(presets):
         print(f"  [{i + 1}] {display_style}")
 
     while True:
-        # ★修正点: ここも 1-N に統一
         val = input(f"スタイル番号を入力 (1-{len(variants)}) > ").strip()
         if not val.isdigit():
             continue
@@ -163,6 +160,50 @@ def wait_for_launch(provider, max_retries=60):
 
     print("\nタイムアウト: エンジンの起動が確認できませんでした。")
     return []
+
+
+def load_character_config(char_dir: pathlib.Path):
+    """
+    指定されたキャラクターフォルダ内の設定ファイルを読み込む。
+    - *.txt -> settings.SYSTEM_PROMPT
+    - *.json -> settings.RESPONSES (マージ)
+    """
+    # 初期化
+    settings.RESPONSES = settings.DEFAULT_RESPONSES.copy()
+    settings.SYSTEM_PROMPT = None
+    
+    # フォルダ内のファイルを走査
+    txt_file = None
+    json_file = None
+    
+    for f in char_dir.glob("*"):
+        if f.suffix == ".txt" and txt_file is None:
+            txt_file = f
+        elif f.suffix == ".json" and json_file is None:
+            json_file = f
+
+    # プロンプト読み込み
+    if txt_file:
+        try:
+            with open(txt_file, "r", encoding="utf-8") as f:
+                settings.SYSTEM_PROMPT = f.read()
+            logger.info(f"Loaded prompt from: {txt_file.name}")
+        except Exception as e:
+            logger.error(f"Failed to load prompt: {e}")
+    else:
+        logger.warning(f"No .txt prompt found in {char_dir.name}")
+
+    # セリフ集読み込み
+    if json_file:
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                custom_responses = json.load(f)
+            settings.RESPONSES.update(custom_responses)
+            logger.info(f"Loaded responses from: {json_file.name}")
+        except Exception as e:
+            logger.error(f"Failed to load json responses: {e}")
+
+    return bool(txt_file)
 
 
 class TTSBot(commands.Bot):
@@ -246,33 +287,36 @@ async def main():
     else:
         print("! プリセットが見つかりませんでした。")
 
-    # 3. システムプロンプト（人格）選択
-    prompt_dir = pathlib.Path("prompts")
-    prompt_files = []
+    # 3. 人格(charactersフォルダ)選択
+    # 修正: charactersフォルダ内のディレクトリを一覧表示する
+    char_base_dir = pathlib.Path("characters")
+    char_dirs = []
 
-    # ファイルがあるかチェック
-    if prompt_dir.exists():
-        prompt_files = [f.name for f in prompt_dir.glob("*.txt")]
-
-    # ★修正点: ファイルが存在する場合のみ選択肢を表示、なければ自動スキップ
-    if prompt_files:
-        selected_prompt = input_index(
-            "使用する人格(プロンプト)を選択してください:",
-            prompt_files,
+    if char_base_dir.exists():
+        # ディレクトリかつ中身があるものを抽出
+        char_dirs = [d for d in char_base_dir.iterdir() if d.is_dir()]
+        
+    if char_dirs:
+        # フォルダ名でソートして表示
+        char_names = sorted([d.name for d in char_dirs])
+        
+        selected_char_name = input_index(
+            "使用する人格設定(characters)を選択してください:",
+            char_names,
             zero_label="LLMを使用しない (No Use)",
         )
 
-        if selected_prompt:
-            try:
-                with open(prompt_dir / selected_prompt, "r", encoding="utf-8") as f:
-                    settings.SYSTEM_PROMPT = f.read()
-                print(f"-> 人格: {selected_prompt} をロードしました。")
-            except Exception as e:
-                logger.error(f"Failed to read prompt file: {e}")
+        if selected_char_name:
+            target_dir = char_base_dir / selected_char_name
+            print(f"-> 設定フォルダ: {selected_char_name} を読み込みます...")
+            
+            if load_character_config(target_dir):
+                print(f"-> 完了しました。")
+            else:
+                print(f"-> 注意: プロンプトファイルが見つかりませんでした。")
     else:
-        # ファイルがない場合のメッセージ
         print(
-            "\n※ promptsフォルダにテキストファイルがないため、LLM機能はオフで起動します。"
+            "\n※ charactersフォルダにキャラクター設定が見つかりません。LLM機能はオフで起動します。"
         )
         settings.SYSTEM_PROMPT = None
 

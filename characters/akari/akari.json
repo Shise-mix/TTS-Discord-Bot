@@ -1,0 +1,117 @@
+{
+    "alarm_set_text": [
+        "⏰ おっけー！: **{time}** {icon} 「{message}」\n(任せて！)",
+        "⏰ セット完了！: **{time}** {icon} 「{message}」\n(絶対起こすからね！)",
+        "⏰ **{time}** {icon} 「{message}」\n(メモったよ！)"
+    ],
+    "alarm_set_voice": [
+        "{time}にアラームセットしたよ！[JOY]",
+        "{time}だね！了解っ！[JOY]",
+        "はーい！{time}にお知らせするね！[NORMAL]"
+    ],
+    "alarm_list_empty_text": "アラームはひとつもないよ！",
+    "alarm_list_empty_voice": "アラームはまだセットしてないみたいだよ。[NORMAL]",
+    "alarm_list_voice": "今セットしてるアラームはこれだね！[NORMAL]",
+    "alarm_delete_text": "🗑️ 削除したよ: **{time}** {message}",
+    "alarm_delete_voice": [
+        "アラーム、消しといたよ！[JOY]",
+        "設定を取り消したよ。[NORMAL]"
+    ],
+    "alarm_notify_text": [
+        "⏰ **時間だよー！** <@{user_id}>\n{message}",
+        "⏰ **おきておきてー！** <@{user_id}>\n{message}"
+    ],
+    "alarm_notify_voice": [
+        "時間だよー！{message}[JOY]",
+        "マスター！時間！時間だってば！{message}[ANGRY]",
+        "お待たせ！時間になったよ！{message}[JOY]",
+        "お知らせの時間だよー！{message}[NORMAL]"
+    ],
+    "dict_add_text": "📖 覚えたよ！: **{word}** → **{reading}**",
+    "dict_add_voice": [
+        "{word}は、{reading}って読むんだね！覚えたよ！[JOY]",
+        "新しい言葉だね！メモメモ……[JOY]"
+    ],
+    "dict_delete_text": "🗑️ 忘れちゃった: **{word}**",
+    "dict_delete_voice": "{word}の登録、消しといたよ！[NORMAL]",
+    "dict_empty_text": "辞書はからっぽだよ",
+    "dict_empty_voice": "辞書にはまだ何も入ってないよ。[NORMAL]",
+    "dict_list_voice": "私が覚えてる言葉はこれくらいかな！[NORMAL]",
+    "timer_set_text": "⏳ **{minutes}分** 計るね！",
+    "timer_set_voice": [
+        "{minutes}分だね！よーい、スタート！[JOY]",
+        "はーい、{minutes}分計るね！[NORMAL]",
+        "{minutes}分後に教えるね！[JOY]"
+    ],
+    "timer_list_empty_text": "動いてるタイマーはないよ",
+    "timer_list_empty_voice": "今動いてるタイマーはないよー。[NORMAL]",
+    "timer_list_voice": "今動いてるタイマーはこれだね！[NORMAL]",
+    "timer_delete_text": "🗑️ タイマーをやめたよ (設定: {minutes}分)",
+    "timer_delete_voice": "タイマー、止めといたよ！[NORMAL]",
+    "timer_notify_text": [
+        "⏳ **{minutes}分経ったよー！** <@{user_id}>",
+        "⏳ **時間だよー！** <@{user_id}>"
+    ],
+    "timer_notify_voice": [
+        "{minutes}分経ったよー！[JOY]",
+        "ぴぴぴっ！時間だよ、マスター！[JOY]",
+        "お時間でーす！[NORMAL]"
+    ],
+    "dice_result_voice": [
+        "えいっ！結果は{total}だよ！[JOY]",
+        "んーっと、{total}かな！[NORMAL]",
+        "ダイスロール！……{total}！[JOY]"
+    ],
+    "dice_critical_text": "\n👑 **すごーい！クリティカルだよ！**",
+    "dice_critical_voice": [
+        "すごいすごい！クリティカルだよ！{total}！[JOY]",
+        "やったねマスター！クリティカルだー！[JOY]"
+    ],
+    "dice_fumble_text": "\n💀 **うわぁ……ファンブル……**",
+    "dice_fumble_voice": [
+        "うわぁ……ファンブル……どんまい……[SAD]",
+        "あちゃー……失敗だね……[SAD]"
+    ],
+    "join_greet_first": [
+        "やっほー！待ってたよ、マスター！[JOY]",
+        "あかりちゃん登場！久しぶりだね！[JOY]",
+        "元気にしてた？会いたかったよー！[JOY]"
+    ],
+    "join_greet_normal": [
+        "呼びましたかー？[JOY]",
+        "はいはい、あかりちゃんですよー！[JOY]",
+        "お疲れ様！何か手伝う？[NORMAL]",
+        "はーい！[JOY]"
+    ],
+    "mute_start": [
+        "ミュートするね！[NORMAL]",
+        "お口チャックだね！[NORMAL]"
+    ],
+    "mute_end": [
+        "ミュート解除！[JOY]",
+        "ぷはーっ！喋れるようになったよ！[JOY]"
+    ],
+    "deaf_start": "耳を塞ぐね！[NORMAL]",
+    "deaf_end": "おかえりー！[JOY]",
+    "stream_start": "配信はじめるんだね！がんばって！[JOY]",
+    "stream_end": "配信おつかれさま！[NORMAL]",
+    "video_start": "カメラオン！[JOY]",
+    "video_end": "カメラオフ！[NORMAL]",
+    "move_voice": [
+        "こっちに移動したよ！[JOY]",
+        "聞こえ方、変わったかな？[NORMAL]"
+    ],
+    "char_change_voice": [
+        "じゃじゃーん！衣装チェンジ！[JOY]",
+        "交代したよ！[JOY]"
+    ],
+    "disconnect_msg": [
+        "じゃあね！また遊んでね！[JOY]",
+        "ばいばーい！ご飯ちゃんと食べてね！[NORMAL]",
+        "失礼しまーす！[NORMAL]"
+    ],
+    "chat_error_reply": [
+        "あれれ？ちょっと何言ってるかわかんないかも……[SAD]",
+        "ごめん！もう一回言ってくれる？[SAD]"
+    ]
+}

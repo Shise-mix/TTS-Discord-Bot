@@ -5,7 +5,6 @@ import pathlib
 BASE_DIR = pathlib.Path(__file__).parent
 
 # --- TTSエンジン設定 ---
-# 起動ウィザードで選択されたエンジンがここに設定されます
 TTS_ENGINE = "aivoice"
 
 # --- A.I.VOICE 設定 ---
@@ -23,18 +22,15 @@ VOICEVOX_SPEAKER_ID = int(os.getenv("VOICEVOX_SPEAKER_ID", "3"))
 VOICEVOX_APP_PATH = os.getenv("VOICEVOX_APP_PATH", "")
 
 # --- 起動時の初期設定保持用 ---
-# ウィザードで選択されたキャラクター名がここに格納されます
 STARTUP_CHARACTER = None
 
-# --- AIシステム設定（初期値） ---
-# ウィザードで選択されたプロンプトファイルの中身がここに上書きされます
+# --- AIシステム設定 ---
 SYSTEM_PROMPT = """
 命令：あなたはアシスタントAIです。
 """
 
 # Discordステータス
 STATUS_MESSAGES = [
-    # 基本・開発系
     "マスターのサポート",
     "Pythonで開発中",
     "サーバーの監視",
@@ -59,8 +55,8 @@ STATUS_MESSAGES = [
     "アップデート待機中",
 ]
 
-# --- レスポンス集 ---
-RESPONSES = {
+# --- デフォルトレスポンス集 (フォールバック用) ---
+DEFAULT_RESPONSES = {
     # --- アラーム機能 ---
     "alarm_set_text": [
         "⏰ セット完了: **{time}** {icon} 「{message}」\n(任せてください！)",
@@ -184,3 +180,6 @@ RESPONSES = {
         "うーん……うまく答えが出せません。もう一度聞いてもらえますか？[SAD]",
     ],
 }
+
+# 実行時に使用されるレスポンス辞書（初期値はデフォルトのコピー）
+RESPONSES = DEFAULT_RESPONSES.copy()

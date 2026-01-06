@@ -1,0 +1,117 @@
+{
+    "alarm_set_text": [
+        "⏰ 了解なのだ: **{time}** {icon} 「{message}」\n(ちゃんと起きるのだ)",
+        "⏰ セットしたのだ: **{time}** {icon} 「{message}」\n(ボクに任せるのだ！)",
+        "⏰ **{time}** {icon} 「{message}」\n(忘れないようにするのだ)"
+    ],
+    "alarm_set_voice": [
+        "{time}にアラームをセットしたのだ。[NORMAL]",
+        "{time}だな？任せてほしいのだ！[JOY]",
+        "はいはい、{time}に起こせばいいのだ？[NORMAL]"
+    ],
+    "alarm_list_empty_text": "アラームはなんにもないのだ",
+    "alarm_list_empty_voice": "アラームはセットされてないのだ。静かなものなのだ。[NORMAL]",
+    "alarm_list_voice": "今のアラーム一覧なのだ。確認するのだ。[NORMAL]",
+    "alarm_delete_text": "🗑️ 削除したのだ: **{time}** {message}",
+    "alarm_delete_voice": [
+        "アラームを消したのだ。[NORMAL]",
+        "その設定はナシにしたのだ。[NORMAL]"
+    ],
+    "alarm_notify_text": [
+        "⏰ **時間なのだ！** <@{user_id}>\n{message}",
+        "⏰ **起きる時間なのだ！** <@{user_id}>\n{message}"
+    ],
+    "alarm_notify_voice": [
+        "時間なのだ！{message}[JOY]",
+        "起きるのだ！時間なのだ！{message}[ANGRY]",
+        "おい、時間過ぎてるのだ！{message}[ANGRY]",
+        "お知らせの時間なのだ。[NORMAL]"
+    ],
+    "dict_add_text": "📖 覚えたのだ: **{word}** → **{reading}**",
+    "dict_add_voice": [
+        "{word}は、{reading}って読むのだな。覚えたのだ。[JOY]",
+        "新しい言葉なのだ。ボクの辞書に追加したのだ。[JOY]"
+    ],
+    "dict_delete_text": "🗑️ 忘れたのだ: **{word}**",
+    "dict_delete_voice": "{word}のことはもう忘れたのだ。[NORMAL]",
+    "dict_empty_text": "辞書はすっからかんなのだ",
+    "dict_empty_voice": "辞書には何もないのだ。もっと教えてほしいのだ。[SAD]",
+    "dict_list_voice": "ボクが知ってる単語はこれなのだ。[NORMAL]",
+    "timer_set_text": "⏳ **{minutes}分** 測ってやるのだ",
+    "timer_set_voice": [
+        "{minutes}分、測ってやるのだ。[NORMAL]",
+        "{minutes}分だな、よーいスタートなのだ！[JOY]",
+        "きっちり{minutes}分後に教えてやるのだ。[NORMAL]"
+    ],
+    "timer_list_empty_text": "タイマーは動いてないのだ",
+    "timer_list_empty_voice": "今動いてるタイマーはないのだ。[NORMAL]",
+    "timer_list_voice": "動いてるタイマーはこれなのだ。[NORMAL]",
+    "timer_delete_text": "🗑️ タイマーをやめたのだ (設定: {minutes}分)",
+    "timer_delete_voice": "タイマーを取り消したのだ。[NORMAL]",
+    "timer_notify_text": [
+        "⏳ **{minutes}分経ったのだ！** <@{user_id}>",
+        "⏳ **時間切れなのだ！** <@{user_id}>"
+    ],
+    "timer_notify_voice": [
+        "{minutes}分経ったのだ！[JOY]",
+        "時間なのだ！作業をやめるのだ！[ANGRY]",
+        "おいマスター、時間なのだぞ。[NORMAL]"
+    ],
+    "dice_result_voice": [
+        "えい！結果は{total}なのだ！[JOY]",
+        "ダイスロール！……{total}だったのだ。[NORMAL]",
+        "んー、{total}なのだ。[NORMAL]"
+    ],
+    "dice_critical_text": "\n👑 **すごいのだ！クリティカルなのだ！**",
+    "dice_critical_voice": [
+        "おおっ！クリティカルなのだ！すごいのだ！[JOY]",
+        "見たか！クリティカルなのだ！ボクの実力なのだ！[JOY]"
+    ],
+    "dice_fumble_text": "\n💀 **ぎゃあ！ファンブルなのだ……**",
+    "dice_fumble_voice": [
+        "ぎゃあ！ファンブルなのだ……[SAD]",
+        "うぐぐ……失敗なのだ……これはいけないのだ……[SAD]"
+    ],
+    "join_greet_first": [
+        "待ってたのだ！遅いのだ！[ANGRY]",
+        "やっと来たのだ。寂しかったのだ。[SAD]",
+        "ボクはずっと待ってたのだぞ！[ANGRY]"
+    ],
+    "join_greet_normal": [
+        "呼んだか？ずんだもんなのだ。[NORMAL]",
+        "はいはい、来たのだ。[NORMAL]",
+        "なになに？ボクの出番なのだ？[JOY]",
+        "なんなのだー？[NORMAL]"
+    ],
+    "mute_start": [
+        "黙るのだ。[NORMAL]",
+        "ミュートするのだ。[NORMAL]"
+    ],
+    "mute_end": [
+        "ぷはっ！やっと喋れるのだ！[JOY]",
+        "ミュート解除なのだ！[JOY]"
+    ],
+    "deaf_start": "耳を塞ぐのだ。[NORMAL]",
+    "deaf_end": "聞こえるようになったのだ！おかえりなのだ。[JOY]",
+    "stream_start": "配信するのだな？しっかりやるのだぞ！[JOY]",
+    "stream_end": "配信お疲れ様なのだ。[NORMAL]",
+    "video_start": "カメラをつけるのだ！[JOY]",
+    "video_end": "カメラを消すのだ。[NORMAL]",
+    "move_voice": [
+        "こっちに移動したのだ。[NORMAL]",
+        "場所を変えたのだ。[NORMAL]"
+    ],
+    "char_change_voice": [
+        "変身なのだ！似合ってるのだ？[JOY]",
+        "ボクに交代なのだ！[JOY]"
+    ],
+    "disconnect_msg": [
+        "もう終わりなのだ？また呼ぶのだぞ。[NORMAL]",
+        "ばいばいなのだ。ずんだ餅食べるのだ。[JOY]",
+        "じゃあな！しっかり休むのだ。[NORMAL]"
+    ],
+    "chat_error_reply": [
+        "むむ……よくわからなかったのだ。[SAD]",
+        "頭がこんがらがったのだ。もう一回頼むのだ。[SAD]"
+    ]
+}
