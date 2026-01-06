@@ -171,11 +171,11 @@ def load_character_config(char_dir: pathlib.Path):
     # 初期化
     settings.RESPONSES = settings.DEFAULT_RESPONSES.copy()
     settings.SYSTEM_PROMPT = None
-    
+
     # フォルダ内のファイルを走査
     txt_file = None
     json_file = None
-    
+
     for f in char_dir.glob("*"):
         if f.suffix == ".txt" and txt_file is None:
             txt_file = f
@@ -295,11 +295,11 @@ async def main():
     if char_base_dir.exists():
         # ディレクトリかつ中身があるものを抽出
         char_dirs = [d for d in char_base_dir.iterdir() if d.is_dir()]
-        
+
     if char_dirs:
         # フォルダ名でソートして表示
         char_names = sorted([d.name for d in char_dirs])
-        
+
         selected_char_name = input_index(
             "使用する人格設定(characters)を選択してください:",
             char_names,
@@ -309,11 +309,11 @@ async def main():
         if selected_char_name:
             target_dir = char_base_dir / selected_char_name
             print(f"-> 設定フォルダ: {selected_char_name} を読み込みます...")
-            
+
             if load_character_config(target_dir):
-                print(f"-> 完了しました。")
+                print("-> 完了しました。")
             else:
-                print(f"-> 注意: プロンプトファイルが見つかりませんでした。")
+                print("-> 注意: プロンプトファイルが見つかりませんでした。")
     else:
         print(
             "\n※ charactersフォルダにキャラクター設定が見つかりません。LLM機能はオフで起動します。"

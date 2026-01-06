@@ -263,7 +263,7 @@ class AudioSystem(commands.Cog):
                 # 違うチャンネルなら移動する
                 await guild_vc.move_to(target_channel)
                 await interaction.response.send_message("Moved to your channel.")
-                
+
                 # 移動時の挨拶
                 text, emo = self._get_response("move_voice")
                 if not text:
@@ -273,7 +273,7 @@ class AudioSystem(commands.Cog):
             # 新規接続
             vc = await target_channel.connect()
             await interaction.response.send_message("Connected.")
-            
+
             # 接続時の挨拶
             text, emo = self._get_response("join_greet_first")
             if not text:
