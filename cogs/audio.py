@@ -3,74 +3,64 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 import os
-import uuid
 import logging
 import traceback
 import io
 import random
 import settings
 from .consts import load_json, extract_emotion
+from .models import CharacterResponses
 from .tts_engines import get_tts_provider
 
 # Rust拡張モジュールのインポート
 try:
     import rust_core
 except ImportError:
-    # 万が一ビルドされていない場合の安全策（本来はここで止めるべきですが）
-    print(
-        "[CRITICAL] 'rust_core' module not found. Make sure you have built the Rust extension."
-    )
+    print("[CRITICAL] 'rust_core' module not found.")
     rust_core = None
 
-# ロガーの設定
 logger = logging.getLogger(__name__)
 
 
 class RustAudioSource(discord.AudioSource):
-    """
-    Rustによってプリロード・リサンプリングされたPCMデータを
-    メモリ上から再生するためのDiscord用AudioSourceクラス。
-    """
+    """メモリ上のPCMデータを再生するAudioSource"""
 
     def __init__(self, pcm_data: bytes):
         self.stream = io.BytesIO(pcm_data)
 
     def read(self):
-        # Discordは20ms分の音声データを要求する (3840 bytes = 48kHz * 2ch * 16bit * 20ms)
         return self.stream.read(3840)
 
     def is_opus(self):
-        # 生のPCMデータなのでFalse
         return False
 
 
 class AudioSystem(commands.Cog):
-    """
-    音声再生システム.
-    Rust拡張モジュール(rust_core)を使用して、音声加工およびPCMデータへの変換を行う。
-    GC停止の影響を受けない安定した配信を実現する。
-    """
-
     def __init__(self, bot):
         self.bot = bot
         self.speech_queue = asyncio.Queue()
 
-        # TTSエンジンの初期化
         engine_name = getattr(settings, "TTS_ENGINE", "aivoice")
         self.tts_provider = get_tts_provider(engine_name)
         self.tts_provider.initialize()
 
-        # 起動時キャラクターの適用
         start_char = getattr(settings, "STARTUP_CHARACTER", None)
         if start_char:
             logger.info(f"Applying startup character: {start_char}")
-            if not self.tts_provider.set_preset(start_char):
-                logger.warning(f"Failed to set startup character: {start_char}")
+            self.tts_provider.set_preset(start_char)
 
-        self.voice_data = load_json("responses.json", {})
-        self.daily_log = load_json("daily_log.json", {})
+        # Pydanticモデルとしてロード
+        # settings.RESPONSES は辞書だが、型安全なアクセスのために変換を試みる
+        # (charactersフォルダからのロード機能と統合するため、settings.RESPONSESをソースとする)
+        try:
+            self.responses = CharacterResponses.parse_obj(settings.RESPONSES)
+        except Exception:
+            logger.warning(
+                "Failed to parse RESPONSES into Pydantic model. Using default."
+            )
+            self.responses = CharacterResponses()
+
         self.word_dict = load_json("dictionary.json", {})
-
         self.bg_task = self.bot.loop.create_task(self.process_queue())
 
     def cog_unload(self):
@@ -78,160 +68,139 @@ class AudioSystem(commands.Cog):
         if self.tts_provider:
             self.tts_provider.terminate()
 
+    def update_responses(self, new_responses_dict: dict):
+        """キャラクター変更時にレスポンス定義を更新する"""
+        try:
+            self.responses = CharacterResponses.parse_obj(new_responses_dict)
+            logger.info("AudioSystem responses updated.")
+        except Exception as e:
+            logger.error(f"Failed to update responses: {e}")
+
     async def process_queue(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
+                # キューからタスク取得
                 task = await self.speech_queue.get()
-                vc_client, text, emotion = task
 
-                if vc_client and vc_client.is_connected():
-                    await self.bot.loop.run_in_executor(
-                        None, self.speak_internal, vc_client, text, emotion
-                    )
+                try:
+                    vc_client, text, emotion = task
 
-                self.speech_queue.task_done()
+                    if vc_client and vc_client.is_connected():
+                        # 重い処理を別スレッドへ逃がす (非同期化)
+                        audio_source = await self.bot.loop.run_in_executor(
+                            None, self._generate_audio_sync, text, emotion
+                        )
+
+                        if audio_source:
+                            await self.play_audio_source(vc_client, audio_source)
+
+                except Exception as e:
+                    logger.error(f"Task processing error: {e}")
+                    logger.error(traceback.format_exc())
+                finally:
+                    # 成功・失敗に関わらず必ず完了通知を送る
+                    self.speech_queue.task_done()
+
                 await asyncio.sleep(0.1)
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Queue processing error: {e}")
+                # キュー取得自体（get）のエラーなど
+                logger.error(f"Queue get error: {e}")
 
-    def speak_internal(self, vc_client, text, emotion="JOY"):
+    def _generate_audio_sync(self, text: str, emotion: str):
         """
-        音声合成 -> Rustによる加工(Trim/Gain/Reverb) -> メモリへのロード
+        【別スレッド実行用】
+        TTS生成 -> メモリ読込 -> Rustパイプライン加工 -> AudioSource作成
         """
-        # Rustモジュールがない場合は何もしない
         if not rust_core:
-            logger.error("Rust core module is missing. Cannot process audio.")
-            return
-
-        EMOTION_MAP = {
-            "HAPPY": "JOY",
-            "GLAD": "JOY",
-            "EXCITED": "JOY",
-            "SMILE": "JOY",
-            "SAD": "SAD",
-            "CRY": "SAD",
-            "SORRY": "SAD",
-            "ANXIOUS": "SAD",
-            "ANGRY": "ANGRY",
-            "MAD": "ANGRY",
-            "DETERMINED": "ANGRY",
-            "SURPRISE": "SURPRISE",
-            "SHOCK": "SURPRISE",
-            "CONFUSED": "SURPRISE",
-            "NORMAL": "NORMAL",
-        }
-        emotion = EMOTION_MAP.get(emotion, emotion)
+            return None
 
         # 辞書置換
         for word, reading in self.word_dict.items():
             text = text.replace(word, reading)
 
-        tmp_filename = f"temp_{uuid.uuid4()}.wav"
-        full_path = os.path.abspath(tmp_filename)
+        # 一時ファイルパス (A.I.VOICE用。VOICEVOXなら不要だが共通化のため使用)
+        # ※ A.I.VOICEは仕様上、ファイル出力が必須。
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tf:
+            temp_path = tf.name
+
+        wav_bytes = None
 
         try:
-            # 1. 音声生成 (TTSエンジン)
-            self.tts_provider.generate_audio(text, emotion, full_path)
+            # 1. TTSエンジンでWave生成 (同期ブロック)
+            self.tts_provider.generate_audio(text, emotion, temp_path)
 
-            if os.path.exists(full_path):
-                # 2. Rustによる加工チェーン
-                try:
-                    current_path = full_path
+            if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
+                # 2. ファイルを即座にメモリに読み込んで削除
+                with open(temp_path, "rb") as f:
+                    wav_bytes = f.read()
 
-                    # Trim (無音カット)
-                    trim_out = current_path.replace(".wav", "_trim.wav")
-                    rust_core.trim_silence(current_path, trim_out, 100)
-                    if os.path.exists(trim_out):
-                        self.cleanup_file(current_path)
-                        current_path = trim_out
+                # A.I.VOICEが出力したファイルはもう不要
+                os.remove(temp_path)
 
-                    # Gain (音量ブースト)
-                    gain_out = current_path.replace(".wav", "_gain.wav")
-                    rust_core.apply_gain(current_path, gain_out, 3.0)
-                    if os.path.exists(gain_out):
-                        self.cleanup_file(current_path)
-                        current_path = gain_out
+                # 3. Rustパイプライン処理 (オンメモリ)
+                # Trim(100) -> Gain(3.0dB) -> Reverb(50ms, 0.3, 0.15)
+                # パラメータは必要に応じて設定ファイルから読み込む形にしても良い
+                pcm_data = rust_core.process_audio_pipeline(
+                    wav_bytes,
+                    3.0,  # Gain dB
+                    100,  # Silence Threshold
+                    True,  # Reverb Enabled
+                    50,  # Delay ms
+                    0.3,  # Decay
+                    0.15,  # Mix
+                )
 
-                    # Reverb (残響付加) - 必要に応じてパラメータ調整 (delay_ms, decay, mix)
-                    reverb_out = current_path.replace(".wav", "_reverb.wav")
-                    rust_core.apply_reverb(current_path, reverb_out, 50, 0.3, 0.15)
-                    if os.path.exists(reverb_out):
-                        self.cleanup_file(current_path)
-                        current_path = reverb_out
-
-                    # 3. RustによるPCMロード & リサンプリング (Discord形式へ変換)
-                    # ノイズ対策（パディング・アライメント調整）もここで行われる
-                    # 返り値は Python の bytes オブジェクト
-                    pcm_bytes = rust_core.load_pcm_data(current_path)
-
-                    # メモリに載せたのでファイルは即削除
-                    self.cleanup_file(current_path)
-
-                    # メモリ再生用のSourceを作成
-                    audio_source = RustAudioSource(pcm_bytes)
-
-                    # 再生予約 (メインループで実行)
-                    future = asyncio.run_coroutine_threadsafe(
-                        self.play_audio_source(vc_client, audio_source), self.bot.loop
-                    )
-                    try:
-                        future.result()
-                    except Exception as e:
-                        logger.error(f"Play schedule failed: {e}")
-
-                except Exception as e:
-                    logger.error(f"Audio processing failed: {e}")
-                    logger.error(traceback.format_exc())
-                    self.cleanup_file(full_path)
+                return RustAudioSource(pcm_data)
             else:
-                logger.warning(f"Audio generation failed: {full_path}")
+                logger.warning("TTS generation failed or empty file.")
+                return None
 
         except Exception as e:
-            logger.error(f"Speech synthesis error: {e}")
+            logger.error(f"Audio generation failed: {e}")
             logger.error(traceback.format_exc())
-        finally:
-            self.cleanup_file(full_path)
+            # ゴミ掃除
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            return None
 
     async def play_audio_source(self, vc_client, audio_source):
         if not vc_client.is_connected():
             return
         try:
-
-            def after_playing(error):
-                if error:
-                    logger.error(f"Playback error: {error}")
-                # RustAudioSourceはメモリなのでファイル削除処理は不要
-
-            vc_client.play(audio_source, after=after_playing)
-
+            vc_client.play(audio_source)
             while vc_client.is_playing():
                 await asyncio.sleep(0.1)
-
         except Exception as e:
-            logger.error(f"Audio playback exception: {e}")
-
-    def cleanup_file(self, path):
-        try:
-            if os.path.exists(path):
-                os.remove(path)
-            txt_path = path.replace(".wav", ".txt")
-            if os.path.exists(txt_path):
-                os.remove(txt_path)
-        except OSError:
-            pass
+            logger.error(f"Playback error: {e}")
 
     def enqueue_speech(self, vc_client, text, emotion="JOY"):
         logger.info(f"Audio Enqueued: {text} ({emotion})")
         self.speech_queue.put_nowait((vc_client, text, emotion))
 
     def _get_response(self, key, **kwargs):
-        raw_val = settings.RESPONSES.get(key, "")
-        if not raw_val:
+        """
+        Pydanticモデルからレスポンスを取得する
+        """
+        # モデルのフィールドを取得 (リストならランダム選択、文字列ならそのまま)
+        raw_val = getattr(self.responses, key, None)
+
+        if raw_val is None:
             return None, "NORMAL"
+
         template = random.choice(raw_val) if isinstance(raw_val, list) else raw_val
+
+        if not template:
+            return None, "NORMAL"
+
         try:
             text = template.format(**kwargs)
         except Exception:
@@ -242,7 +211,6 @@ class AudioSystem(commands.Cog):
 
     @app_commands.command(name="join", description="ボイスチャンネルに接続します")
     async def join(self, interaction: discord.Interaction):
-        # ユーザーがVCにいない場合
         if not interaction.user.voice:
             await interaction.response.send_message(
                 "User is not in a voice channel.", ephemeral=True
@@ -252,166 +220,135 @@ class AudioSystem(commands.Cog):
         target_channel = interaction.user.voice.channel
         guild_vc = interaction.guild.voice_client
 
-        # すでにBotがVCに接続している場合
         if guild_vc and guild_vc.is_connected():
             if guild_vc.channel == target_channel:
-                # 同じチャンネルにいるなら何もしない
                 await interaction.response.send_message(
                     "Already connected to this channel.", ephemeral=True
                 )
             else:
-                # 違うチャンネルなら移動する
                 await guild_vc.move_to(target_channel)
                 await interaction.response.send_message("Moved to your channel.")
-
-                # 移動時の挨拶
                 text, emo = self._get_response("move_voice")
-                if not text:
-                    text, emo = "移動しました。", "NORMAL"
-                self.enqueue_speech(guild_vc, text, emo)
+                self.enqueue_speech(guild_vc, text or "移動しました", emo)
         else:
-            # 新規接続
             vc = await target_channel.connect()
             await interaction.response.send_message("Connected.")
-
-            # 接続時の挨拶
             text, emo = self._get_response("join_greet_first")
-            if not text:
-                text, emo = "接続しました。", "JOY"
-            self.enqueue_speech(vc, text, emo)
+            self.enqueue_speech(vc, text or "接続しました", emo)
 
-    @app_commands.command(
-        name="speak", description="【デバッグ用】指定テキストを読み上げます"
-    )
-    async def speak_test(self, interaction: discord.Interaction, text: str):
-        vc = interaction.guild.voice_client
-        if vc and vc.is_connected():
-            await interaction.response.send_message(f"Test speak: {text}")
-            self.enqueue_speech(vc, text, "JOY")
-        else:
-            await interaction.response.send_message(
-                "Bot is not connected to VC.", ephemeral=True
-            )
-
-    @app_commands.command(
-        name="stop", description="読み上げを停止し、キューをクリアします"
-    )
+    @app_commands.command(name="stop", description="読み上げ停止")
     async def stop(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if vc and vc.is_playing():
             vc.stop()
+
+        # キューを空にする
         while not self.speech_queue.empty():
             try:
                 self.speech_queue.get_nowait()
+                self.speech_queue.task_done()
             except asyncio.QueueEmpty:
                 break
-        await interaction.response.send_message("Playback stopped and queue cleared.")
 
-    @app_commands.command(name="bye", description="ボイスチャンネルから切断します")
+        await interaction.response.send_message("Stopped.")
+
+    @app_commands.command(name="bye", description="切断")
     async def bye(self, interaction: discord.Interaction):
+        # 1. 処理が長引く（再生待ちする）ことをDiscordに通知し、タイムアウトを防ぐ
+        await interaction.response.defer()
+
         vc = interaction.guild.voice_client
         if vc:
-            await interaction.response.send_message("Disconnecting...")
+            # ユーザーには「切断処理中」であることを先に伝える
+            # defer済みなのて followup.send を使う
+            await interaction.followup.send("Disconnecting...")
+
             text, emo = self._get_response("disconnect_msg")
             if text:
                 self.enqueue_speech(vc, text, emo)
 
-            # 再生完了まで待機
+            # 2. 音声再生が完了するまで待機（ここが数秒以上かかる）
             await self.speech_queue.join()
 
+            # 3. 再生完了後に切断
             await vc.disconnect()
+
+            # (オプション) 完了メッセージを送る場合
+            # await interaction.followup.send("Disconnected.")
         else:
-            await interaction.response.send_message("Not connected.", ephemeral=True)
+            await interaction.followup.send("Not connected.", ephemeral=True)
 
     async def preset_autocomplete(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
         presets = self.tts_provider.get_presets()
-        if not presets:
-            return []
         return [
             app_commands.Choice(name=p, value=p)
             for p in presets
             if current.lower() in p.lower()
         ][:25]
 
-    @app_commands.command(name="char", description="TTSキャラクターを変更します")
+    @app_commands.command(name="char", description="TTSキャラクター変更")
     @app_commands.autocomplete(style=preset_autocomplete)
     async def char(self, interaction: discord.Interaction, style: str):
         if self.tts_provider.set_preset(style):
-            await interaction.response.send_message(
-                f"Character changed to: **{style}**"
-            )
+            await interaction.response.send_message(f"Changed to: **{style}**")
             if interaction.guild.voice_client:
                 text, emo = self._get_response("char_change_voice")
-                if not text:
-                    text, emo = "交代しました。", "JOY"
-                self.enqueue_speech(interaction.guild.voice_client, text, emo)
+                self.enqueue_speech(
+                    interaction.guild.voice_client, text or "交代しました", emo
+                )
         else:
             await interaction.response.send_message(
                 f"Preset '{style}' not found.", ephemeral=True
             )
 
-    @app_commands.command(
-        name="presets", description="利用可能なキャラクター一覧を表示します"
-    )
+    @app_commands.command(name="presets", description="プリセット一覧")
     async def list_presets(self, interaction: discord.Interaction):
         presets = self.tts_provider.get_presets()
-        if not presets:
-            await interaction.response.send_message(
-                "No presets available.", ephemeral=True
-            )
-            return
         disp = "\n".join(presets[:20])
         if len(presets) > 20:
             disp += f"\n...and {len(presets) - 20} more."
-        await interaction.response.send_message(f"**Available Presets:**\n{disp}")
+        await interaction.response.send_message(f"**Presets:**\n{disp}")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member.bot:
             return
+
+        # Auto Join
         if before.channel != after.channel and after.channel is not None:
             vc = member.guild.voice_client
             if vc is None:
                 try:
                     vc = await after.channel.connect()
-                    logger.info(f"Auto-joined channel: {after.channel.name}")
                 except Exception:
                     return
+
             if vc.channel == after.channel:
                 text, emo = self._get_response("join_greet_normal")
-                if not text:
-                    text, emo = f"{member.display_name}さん、こんにちは。", "JOY"
-                self.enqueue_speech(vc, text, emo)
+                self.enqueue_speech(vc, text or "こんにちは", emo)
 
         vc = member.guild.voice_client
         if vc and after.channel == vc.channel:
-            if before.self_mute != after.self_mute:
-                key = "mute_start" if after.self_mute else "mute_end"
-                text, emo = self._get_response(key)
-                if text:
-                    self.enqueue_speech(vc, text, emo)
-            if before.self_deaf != after.self_deaf:
-                key = "deaf_start" if after.self_deaf else "deaf_end"
-                text, emo = self._get_response(key)
-                if text:
-                    self.enqueue_speech(vc, text, emo)
-            if before.self_stream != after.self_stream:
-                key = "stream_start" if after.self_stream else "stream_end"
-                text, emo = self._get_response(key)
-                if text:
-                    self.enqueue_speech(vc, text, emo)
-            if before.self_video != after.self_video:
-                key = "video_start" if after.self_video else "video_end"
-                text, emo = self._get_response(key)
-                if text:
-                    self.enqueue_speech(vc, text, emo)
+            # 状態変化イベント
+            events = [
+                (before.self_mute, after.self_mute, "mute_start", "mute_end"),
+                (before.self_deaf, after.self_deaf, "deaf_start", "deaf_end"),
+                (before.self_stream, after.self_stream, "stream_start", "stream_end"),
+                (before.self_video, after.self_video, "video_start", "video_end"),
+            ]
+            for b_state, a_state, k_start, k_end in events:
+                if b_state != a_state:
+                    key = k_start if a_state else k_end
+                    text, emo = self._get_response(key)
+                    if text:
+                        self.enqueue_speech(vc, text, emo)
 
+        # Auto Disconnect
         if vc and before.channel == vc.channel:
             human_count = sum(1 for m in vc.channel.members if not m.bot)
             if human_count == 0:
-                logger.info("No users left. Disconnecting.")
                 await vc.disconnect()
 
 

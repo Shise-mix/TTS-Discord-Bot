@@ -2,17 +2,21 @@ import json
 import os
 import re
 import logging
+from typing import Type, TypeVar
+from pydantic import BaseModel
 
-# ロガーの設定
 logger = logging.getLogger(__name__)
 
-# 感情タグパターン（[], (), 【】, （）に対応）
-# 修正: 内部のキャプチャグループ () を削除し、re.split時の意図しない分割を防ぐ
 TAG_PATTERN = r"[\[【(（]\s*[A-Z]+\s*[\]】)）]"
+T = TypeVar("T", bound=BaseModel)
 
 
 def load_json(filename, default):
-    """JSONファイルを読み込む．失敗時はデフォルト値を返す"""
+    """
+    JSONファイルを読み込み、辞書(dict)として返します。
+    読み込みに失敗した場合やファイルが存在しない場合はデフォルト値を返します。
+    ※後方互換性のために残されています。
+    """
     if os.path.exists(filename):
         try:
             with open(filename, "r", encoding="utf-8") as f:
@@ -20,6 +24,22 @@ def load_json(filename, default):
         except json.JSONDecodeError:
             return default
     return default
+
+
+def load_pydantic_model(filename: str, model_class: Type[T]) -> T:
+    """
+    JSONファイルを読み込み、指定されたPydanticモデルに変換して返します。
+    ファイルが存在しない場合や解析エラー時は、デフォルト値（初期状態のモデル）を返します。
+    """
+    if os.path.exists(filename):
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return model_class.parse_obj(data)
+        except Exception as e:
+            logger.error(f"Failed to load model from {filename}: {e}")
+            return model_class()  # デフォルト値で返す
+    return model_class()
 
 
 def save_json(filename, data):

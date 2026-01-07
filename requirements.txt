@@ -2,9 +2,8 @@ discord.py
 openai
 python-dotenv
 pythonnet
-pydub
-imageio-ffmpeg
 PyNaCl
 requests
 maturin
 ruff
+pydantic>=2.0.0

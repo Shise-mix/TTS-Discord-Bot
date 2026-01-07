@@ -112,11 +112,8 @@ def select_character_interactive(presets):
 
 
 def try_launch_app(engine_name):
-    """
-    指定されたエンジンのアプリケーションを自動起動する。
-    """
+    """指定されたエンジンのアプリケーションを自動起動する"""
     app_path = None
-
     if engine_name == "aivoice":
         app_path = getattr(settings, "AIVOICE_APP_PATH", None)
     elif engine_name == "voicevox":
@@ -125,12 +122,10 @@ def try_launch_app(engine_name):
     if app_path and os.path.exists(app_path):
         try:
             print(f"アプリを起動しています (バックグラウンド): {app_path}")
-
             startup_kwargs = {
                 "stdout": subprocess.DEVNULL,
                 "stderr": subprocess.DEVNULL,
             }
-
             if os.name == "nt":
                 info = subprocess.STARTUPINFO()
                 info.dwFlags |= 1
@@ -138,7 +133,6 @@ def try_launch_app(engine_name):
                 startup_kwargs["startupinfo"] = info
 
             subprocess.Popen(app_path, **startup_kwargs)
-
         except Exception as e:
             logger.error(f"アプリの自動起動に失敗しました: {e}")
             print("! 自動起動に失敗しました。手動でアプリを起動してください。")
@@ -168,7 +162,7 @@ def load_character_config(char_dir: pathlib.Path):
     - *.txt -> settings.SYSTEM_PROMPT
     - *.json -> settings.RESPONSES (マージ)
     """
-    # 初期化
+    # 初期化（デフォルトに戻す）
     settings.RESPONSES = settings.DEFAULT_RESPONSES.copy()
     settings.SYSTEM_PROMPT = None
 
@@ -198,6 +192,7 @@ def load_character_config(char_dir: pathlib.Path):
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 custom_responses = json.load(f)
+            # デフォルト設定に上書きマージ
             settings.RESPONSES.update(custom_responses)
             logger.info(f"Loaded responses from: {json_file.name}")
         except Exception as e:
@@ -211,14 +206,11 @@ class TTSBot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.voice_states = True
-
         prefix = getattr(settings, "COMMAND_PREFIX", "!")
-
         super().__init__(command_prefix=prefix, intents=intents, help_command=None)
 
     async def setup_hook(self):
         initial_extensions = ["cogs.audio", "cogs.chat", "cogs.utils"]
-
         for extension in initial_extensions:
             try:
                 await self.load_extension(extension)
@@ -237,7 +229,6 @@ class TTSBot(commands.Bot):
         logger.info(f"Engine: {settings.TTS_ENGINE}")
         logger.info(f"Character: {settings.STARTUP_CHARACTER}")
         logger.info("System Ready.")
-
         if not self.change_status_loop.is_running():
             self.change_status_loop.start()
 
@@ -269,35 +260,30 @@ async def main():
 
     print(f"-> エンジン: {settings.TTS_ENGINE} を選択しました。")
 
-    # アプリの自動起動処理
     try_launch_app(settings.TTS_ENGINE)
 
-    # 2. キャラクター選択
+    # 2. キャラクター選択 (TTS)
     engine_name = settings.TTS_ENGINE
     temp_provider = get_tts_provider(engine_name)
-
     presets = wait_for_launch(temp_provider)
 
     if presets:
         char_choice = select_character_interactive(presets)
-
         if char_choice:
             settings.STARTUP_CHARACTER = char_choice
             print(f"-> キャラクター: {char_choice} を選択しました。")
     else:
         print("! プリセットが見つかりませんでした。")
 
-    # 3. 人格(charactersフォルダ)選択
-    # 修正: charactersフォルダ内のディレクトリを一覧表示する
+    # 3. 人格設定 (charactersフォルダ) 選択
     char_base_dir = pathlib.Path("characters")
     char_dirs = []
 
     if char_base_dir.exists():
-        # ディレクトリかつ中身があるものを抽出
         char_dirs = [d for d in char_base_dir.iterdir() if d.is_dir()]
 
     if char_dirs:
-        # フォルダ名でソートして表示
+        # フォルダ名でソート
         char_names = sorted([d.name for d in char_dirs])
 
         selected_char_name = input_index(

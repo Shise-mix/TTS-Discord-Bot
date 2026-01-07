@@ -1,19 +1,31 @@
-# --- 設定・情報 ---
+# --- 機密情報・ローカル設定 ---
 .env
+.vscode/
+.idea/
+
+# --- 実行時生成データ (ログ・DB) ---
 daily_log.json
 alarms.json
 dictionary.json
+*.log
 
-# --- キャラクター設定 ---
-prompts/*
-!prompts/demo.txt
-
-# --- その他 ---
+# --- Python ---
 .venv/
 __pycache__/
 */__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+
+# --- Rust ---
+target/
+rust_core/target/
+
+# --- 一時ファイル ---
 temp_*.wav
 temp_*.txt
-*.log
-.ruff_cache/
-target/
+
+# --- OS ---
+Thumbs.db
+Desktop.ini
+.DS_Store
