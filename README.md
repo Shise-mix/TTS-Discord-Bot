@@ -133,14 +133,6 @@ Bot へのメンション、または返信によって LLM との会話が可�
 
 ---
 
-## プロジェクト構成
-* `main.py`: 起動処理およびウィザード
-* `cogs/audio.py`: 音声再生・キュー管理・Rust 連携
-* `cogs/chat.py`: LLM 通信・感情解析
-* `rust_core/`: Rust 実装部
-
----
-
 ## ライセンス
 MIT License
 
